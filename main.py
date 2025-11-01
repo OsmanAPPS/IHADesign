@@ -22,21 +22,53 @@ class MainWindow(QMainWindow):
         control_layout = QVBoxLayout(control_panel)
         main_layout.addWidget(control_panel, 1)
 
-        # Wing Length Slider
-        control_layout.addWidget(QLabel("Wing Length"))
-        self.wing_slider = QSlider(Qt.Orientation.Horizontal)
-        self.wing_slider.setRange(5, 25)
-        self.wing_slider.setValue(12)
-        self.wing_slider.valueChanged.connect(self.update_aircraft)
-        control_layout.addWidget(self.wing_slider)
+        # Wing Span Slider
+        control_layout.addWidget(QLabel("Wing Span"))
+        self.wing_span_slider = QSlider(Qt.Orientation.Horizontal)
+        self.wing_span_slider.setRange(5, 30)
+        self.wing_span_slider.setValue(12)
+        self.wing_span_slider.valueChanged.connect(self.update_aircraft)
+        control_layout.addWidget(self.wing_span_slider)
+
+        # Wing Chord Slider
+        control_layout.addWidget(QLabel("Wing Chord (Width)"))
+        self.wing_chord_slider = QSlider(Qt.Orientation.Horizontal)
+        self.wing_chord_slider.setRange(10, 50) # x 0.1
+        self.wing_chord_slider.setValue(20)
+        self.wing_chord_slider.valueChanged.connect(self.update_aircraft)
+        control_layout.addWidget(self.wing_chord_slider)
+
+        # Fuselage Length Slider
+        control_layout.addWidget(QLabel("Fuselage Length"))
+        self.fuselage_length_slider = QSlider(Qt.Orientation.Horizontal)
+        self.fuselage_length_slider.setRange(8, 20)
+        self.fuselage_length_slider.setValue(10)
+        self.fuselage_length_slider.valueChanged.connect(self.update_aircraft)
+        control_layout.addWidget(self.fuselage_length_slider)
 
         # Fuselage Radius Slider
         control_layout.addWidget(QLabel("Fuselage Radius"))
-        self.fuselage_slider = QSlider(Qt.Orientation.Horizontal)
-        self.fuselage_slider.setRange(3, 10) # Using integers, will be divided by 10
-        self.fuselage_slider.setValue(5)
-        self.fuselage_slider.valueChanged.connect(self.update_aircraft)
-        control_layout.addWidget(self.fuselage_slider)
+        self.fuselage_radius_slider = QSlider(Qt.Orientation.Horizontal)
+        self.fuselage_radius_slider.setRange(3, 10) # x 0.1
+        self.fuselage_radius_slider.setValue(5)
+        self.fuselage_radius_slider.valueChanged.connect(self.update_aircraft)
+        control_layout.addWidget(self.fuselage_radius_slider)
+
+        # Tail Wing Span Slider
+        control_layout.addWidget(QLabel("Tail Wing Span"))
+        self.tail_wing_span_slider = QSlider(Qt.Orientation.Horizontal)
+        self.tail_wing_span_slider.setRange(2, 10)
+        self.tail_wing_span_slider.setValue(4)
+        self.tail_wing_span_slider.valueChanged.connect(self.update_aircraft)
+        control_layout.addWidget(self.tail_wing_span_slider)
+
+        # Vertical Stabilizer Height Slider
+        control_layout.addWidget(QLabel("Vertical Stabilizer Height"))
+        self.stabilizer_height_slider = QSlider(Qt.Orientation.Horizontal)
+        self.stabilizer_height_slider.setRange(1, 5)
+        self.stabilizer_height_slider.setValue(2)
+        self.stabilizer_height_slider.valueChanged.connect(self.update_aircraft)
+        control_layout.addWidget(self.stabilizer_height_slider)
 
         control_layout.addStretch()
 
@@ -60,17 +92,24 @@ class MainWindow(QMainWindow):
 
     def update_aircraft(self):
         """Clears the scene and redraws the aircraft with current slider values."""
-        self.plotter.clear_actors() # Clear previous aircraft parts
+        self.plotter.clear_actors()  # Clear previous aircraft parts
 
         # Get values from sliders
-        wing_length = self.wing_slider.value()
-        fuselage_radius = self.fuselage_slider.value() / 10.0
+        wing_span = self.wing_span_slider.value()
+        wing_chord = self.wing_chord_slider.value() / 10.0
+        fuselage_length = self.fuselage_length_slider.value()
+        fuselage_radius = self.fuselage_radius_slider.value() / 10.0
+        tail_wing_span = self.tail_wing_span_slider.value()
+        stabilizer_height = self.stabilizer_height_slider.value()
+
+        # Define tail position based on fuselage length
+        tail_pos_x = -fuselage_length / 2.0 + 0.5
 
         # Create airplane parts using parameters
-        fuselage = pv.Cylinder(center=(0, 0, 0), direction=(1, 0, 0), radius=fuselage_radius, height=10)
-        wing = pv.Cube(center=(0, 0, 0), x_length=0.2, y_length=wing_length, z_length=1)
-        tail_wing = pv.Cube(center=(-4.5, 0, 0.5), x_length=0.1, y_length=wing_length / 3.0, z_length=0.5)
-        vertical_stabilizer = pv.Cube(center=(-4.5, 0, 1), x_length=0.1, y_length=0.5, z_length=2)
+        fuselage = pv.Cylinder(center=(0, 0, 0), direction=(1, 0, 0), radius=fuselage_radius, height=fuselage_length)
+        wing = pv.Cube(center=(0, 0, 0), x_length=wing_chord, y_length=wing_span, z_length=wing_chord / 10.0)
+        tail_wing = pv.Cube(center=(tail_pos_x, 0, fuselage_radius * 0.5), x_length=wing_chord / 2.0, y_length=tail_wing_span, z_length=wing_chord / 20.0)
+        vertical_stabilizer = pv.Cube(center=(tail_pos_x, 0, fuselage_radius + stabilizer_height / 2.0), x_length=wing_chord / 2.0, y_length=wing_chord/10, z_length=stabilizer_height)
 
         # Add parts to the plotter
         self.plotter.add_mesh(fuselage, name="fuselage", color='silver', smooth_shading=True)
